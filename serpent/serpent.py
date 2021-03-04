@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import shlex
 import time
+from pathlib import Path
 
 import offshoot
 
@@ -91,80 +92,30 @@ def setup_base():
     # Copy Config Templates
     print("Creating Configuration Files...")
 
-    first_run = True
+    from_dir = Path(__file__).parent
+    to_dir = Path().absolute()
 
-    for root, directories, files in os.walk(os.getcwd()):
-        for file in files:
-            if file == "offshoot.yml":
-                first_run = False
-                break
-
-        if not first_run:
-            break
-
-    if not first_run:
+    if (to_dir / "offshoot.yml").exists():
         confirm = input("It appears that the setup process had already been performed. Are you sure you want to proceed? Some important files will be overwritten! (One of: 'YES', 'NO'):\n")
 
-        if confirm not in ["YES", "NO"]:
-            confirm = "NO"
+        if confirm.lower() != "yes":
+            return
 
-        if confirm == "NO":
-            sys.exit()
+    shutil.rmtree(to_dir / "config", ignore_errors=True)
 
-    shutil.rmtree(os.path.join(os.getcwd(), "config"), ignore_errors=True)
-
-    shutil.copytree(
-        os.path.join(os.path.dirname(__file__), "config"),
-        os.path.join(os.getcwd(), "config")
-    )
+    shutil.copytree(from_dir / "config", to_dir / "config")
 
     # Copy Offshoot Files
-    shutil.copy(
-        os.path.join(os.path.dirname(__file__), "offshoot.yml"),
-        os.path.join(os.getcwd(), "offshoot.yml")
-    )
-
-    shutil.copy(
-        os.path.join(os.path.dirname(__file__), "offshoot.manifest.json"),
-        os.path.join(os.getcwd(), "offshoot.manifest.json")
-    )
-
-    # Generate Platform-Specific requirements.txt
-    if is_linux():
-        shutil.copy(
-            os.path.join(os.path.dirname(__file__), "requirements.linux.txt"),
-            os.path.join(os.getcwd(), "requirements.txt")
-        )
-    elif is_windows():
-        shutil.copy(
-            os.path.join(os.path.dirname(__file__), "requirements.win32.txt"),
-            os.path.join(os.getcwd(), "requirements.txt")
-        )
-
-    # Install the dependencies
-    print("Installing dependencies...")
-
-    if is_linux():
-        subprocess.call(shlex.split("pip install python-xlib"))
-    elif is_windows():
-        # Anaconda Packages
-        subprocess.call(shlex.split("conda install numpy scipy scikit-image scikit-learn h5py -y"), shell=True)
-
-    subprocess.call(shlex.split("pip install -r requirements.txt"))
-    
-    # Install Crossbar
-    subprocess.call(shlex.split("pip install crossbar==18.6.1"))
+    shutil.copy(from_dir / "offshoot.yml", to_dir / "offshoot.yml")
+    shutil.copy(from_dir / "offshoot.manifest.json", to_dir / "offshoot.manifest.json")
 
     # Create Dataset Directories
-    os.makedirs(os.path.join(os.getcwd(), "datasets/collect_frames"), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), "datasets/collect_frames_for_context"), exist_ok=True)
-    os.makedirs(os.path.join(os.getcwd(), "datasets/current"), exist_ok=True)
+    os.makedirs(to_dir / "datasets/collect_frames", exist_ok=True)
+    os.makedirs(to_dir / "datasets/collect_frames_for_context", exist_ok=True)
+    os.makedirs(to_dir / "datasets/current", exist_ok=True)
 
     # Copy the Crossbar config
-    shutil.copy(
-        os.path.join(os.path.dirname(__file__), "crossbar.json"),
-        os.path.join(os.getcwd(), "crossbar.json")
-    )
+    shutil.copy(from_dir / "crossbar.json", to_dir / "crossbar.json")
 
 def setup_ocr():
     if is_linux():

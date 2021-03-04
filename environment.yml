@@ -1,0 +1,6 @@
+name: SerpentAI
+dependencies:
+  - python=3.6
+  - anaconda
+  - pip
+  - setuptools
